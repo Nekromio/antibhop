@@ -6,6 +6,8 @@ ConVar
 	cvCountJump,
 	cvTimer;
 
+bool bActive;
+
 enum struct Settings
 {
 	Handle hTimerJump;
@@ -28,7 +30,7 @@ public Plugin myinfo =
 	name		= "Anti-BHop",
 	author		= "Nek.'a 2x2 | ggwp.site ",
 	description	= "Блокировка распрыжки",
-	version		= "1.0.9",
+	version		= "1.1.0",
 	url			= "ggwp.site || vk.com/nekromio || t.me/sourcepwn "
 }
 
@@ -41,6 +43,8 @@ public void OnPluginStart()
 	cvTimer = CreateConVar("sm_antibhop_timer", "2", "Время через которое сработает восстановление", _, true, 0.0, true, 60.0);
 
     HookEvent("player_jump", Event_PlayerJump);
+    HookEvent("round_end", Event_RoundEnd);
+    HookEvent("round_start", Event_RoundStart);
 
     CreateTimer(0.5, Timer_CheckPos, _, TIMER_REPEAT);
 	
@@ -51,6 +55,16 @@ public void OnClientDisconnect(int client)
 {
     delete status[client].hTimerJump;
     status[client].Reset();
+}
+
+void Event_RoundEnd(Event hEvent, const char[] sName, bool bDontBroadcast)
+{
+    bActive = false;
+}
+
+void Event_RoundStart(Event hEvent, const char[] sName, bool bDontBroadcast)
+{
+    bActive = true;
 }
 
 void Event_PlayerJump(Event hEvent, const char[] sName, bool bDontBroadcast)
@@ -86,7 +100,7 @@ Action Timer_Jump(Handle hTimer, any UserID)
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
-	if(!cvEnable.BoolValue || !IsClientValid(client) || IsFakeClient(client) || !IsPlayerAlive(client))
+	if(!cvEnable.BoolValue || !IsClientValid(client) || IsFakeClient(client) || !IsPlayerAlive(client) || !bActive)
 		return Plugin_Continue;
 
 	if(buttons & IN_JUMP && GetEntityFlags(client) & FL_ONGROUND && status[client].bEnableJump)
